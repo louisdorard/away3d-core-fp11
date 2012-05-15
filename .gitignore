@@ -2,3 +2,9 @@
 /target
 /.project
 /.actionScriptProperties
+
+src/away3d/cameras/.DS_Store
+
+.DS_Store
+
+.gitignore

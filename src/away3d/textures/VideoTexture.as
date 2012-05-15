@@ -19,7 +19,7 @@ package away3d.textures
 		private var _player : IVideoPlayer;
 		private var _clippingRect : Rectangle;
 
-		public function VideoTexture(source : String, materialWidth : uint = 256, materialHeight : uint = 256, loop : Boolean = true, autoPlay : Boolean = false, player : IVideoPlayer = null)
+		public function VideoTexture(source : String, materialWidth : uint = 256, materialHeight : uint = 256, loop : Boolean = true, autoPlay : Boolean = false, player : IVideoPlayer = null, serverAddress : String = null, fps : int = 15)
 		{
 			_broadcaster = new Sprite();
 
@@ -31,7 +31,7 @@ package away3d.textures
 			_clippingRect = new Rectangle(0, 0, _materialWidth, _materialHeight);
 
 			// assigns the provided player or creates a simple player if null.
-			_player = player || new SimpleVideoPlayer();
+			_player = player || new SimpleVideoPlayer(serverAddress);
 			_player.loop = loop;
 			_player.source = source;
 			_player.width = _materialWidth;

@@ -2,6 +2,8 @@ package away3d.materials.utils
 {
 	import flash.display.Sprite;
 	import flash.events.AsyncErrorEvent;
+	import flash.events.Event;
+	import flash.events.EventDispatcher;
 	import flash.events.IOErrorEvent;
 	import flash.events.NetStatusEvent;
 	import flash.events.SecurityErrorEvent;
@@ -10,7 +12,7 @@ package away3d.materials.utils
 	import flash.net.NetConnection;
 	import flash.net.NetStream;
 
-	public class SimpleVideoPlayer implements IVideoPlayer
+	public class SimpleVideoPlayer extends EventDispatcher implements IVideoPlayer
 	{
 		
 		private var _src:String;
@@ -25,7 +27,7 @@ package away3d.materials.utils
 		private var _lastVolume:Number;
 		private var _container:Sprite;
 		
-		public function SimpleVideoPlayer()
+		public function SimpleVideoPlayer(serverAddress:String = null)
 		{
 			
 			// default values
@@ -50,23 +52,9 @@ package away3d.materials.utils
 			_nc.addEventListener(SecurityErrorEvent.SECURITY_ERROR, securityErrorHandler, false, 0, true);
 			_nc.addEventListener(IOErrorEvent.IO_ERROR, 			ioErrorHandler, false, 0, true);
 			_nc.addEventListener(AsyncErrorEvent.ASYNC_ERROR, 		asyncErrorHandler, false, 0, true);
-			_nc.connect(null);
+			_nc.connect(serverAddress);
 			
-			// NetStream
-			_ns = new NetStream(_nc);
-			_ns.checkPolicyFile = true;
-			_ns.client = _nsClient;
-			_ns.addEventListener(NetStatusEvent.NET_STATUS, 	netStatusHandler, false, 0, true);
-			_ns.addEventListener(AsyncErrorEvent.ASYNC_ERROR, 	asyncErrorHandler, false, 0, true);
-			_ns.addEventListener(IOErrorEvent.IO_ERROR, 		ioErrorHandler, false, 0, true);
-			
-			// video
 			_video = new Video();
-			_video.attachNetStream( _ns );
-			
-			// container
-			_container = new Sprite();
-			_container.addChild( _video );
 		}
 		
 		
@@ -95,6 +83,11 @@ package away3d.materials.utils
 				_playing = true;
 				_paused = false;
 			}
+		}
+		
+		public function step(frames:int):void
+		{
+			_ns.step(frames);
 		}
 		
 		public function pause():void
@@ -213,6 +206,24 @@ package away3d.materials.utils
 					break;
 				case "NetConnection.Connect.Success":
 					trace("Connected to stream", e);
+					
+					// NetStream
+					_ns = new NetStream(_nc);
+					_ns.checkPolicyFile = true;
+					_ns.client = _nsClient;
+					_ns.addEventListener(NetStatusEvent.NET_STATUS, 	netStatusHandler, false, 0, true);
+					_ns.addEventListener(AsyncErrorEvent.ASYNC_ERROR, 	asyncErrorHandler, false, 0, true);
+					_ns.addEventListener(IOErrorEvent.IO_ERROR, 		ioErrorHandler, false, 0, true);
+					
+					// video
+					_video.attachNetStream( _ns );
+					
+					// container
+					_container = new Sprite();
+					_container.addChild( _video );
+					
+					this.dispatchEvent(new Event("ready", true));
+				
 					break;
 			}
 		}
@@ -308,6 +319,13 @@ package away3d.materials.utils
 			_video.height = val;
 		}
 		
+		public function get inBufferSeek():Boolean{
+			return _ns.inBufferSeek;
+		}
+		
+		public function set inBufferSeek(b:Boolean):void{
+			_ns.inBufferSeek = b;
+		}
 		
 		//////////////////////////////////////////////////////
 		// read-only vars

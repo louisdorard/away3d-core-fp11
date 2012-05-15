@@ -3,7 +3,7 @@ package away3d.textures
 	import away3d.materials.utils.IVideoPlayer;
 	import away3d.materials.utils.SimpleVideoPlayer;
 	import away3d.tools.utils.TextureUtils;
-
+	
 	import flash.display.BitmapData;
 	import flash.display.Sprite;
 	import flash.events.Event;
@@ -18,6 +18,10 @@ package away3d.textures
 		private var _materialHeight : uint;
 		private var _player : IVideoPlayer;
 		private var _clippingRect : Rectangle;
+		
+		private var _currentTime:int;
+		private var _lastTime:int = -100;
+		private var _frameInterval:int;
 
 		public function VideoTexture(source : String, materialWidth : uint = 256, materialHeight : uint = 256, loop : Boolean = true, autoPlay : Boolean = false, player : IVideoPlayer = null, serverAddress : String = null, fps : int = 15)
 		{
@@ -39,6 +43,9 @@ package away3d.textures
 
 			// sets autplay
 			_autoPlay = autoPlay;
+			
+			// computes the time interval between consecutive frames, given the number of frames per second
+			_frameInterval = int(1/fps * 10000);
 
 			// Sets up the bitmap material
 			super(new BitmapData(_materialWidth, _materialHeight, false, 0x00ffffff));
@@ -53,21 +60,26 @@ package away3d.textures
 
 		/**
 		 * Draws the video and updates the bitmap texture
-		 * If autoUpdate is false and this function is not called the bitmap texture will not update!
+		 * - If autoUpdate is false and this function is not called the bitmap texture will not update!
+		 * - If the time measured by the player since the last update is smaller than the interframe time interval, then there is no new frame to be shown and therefore no update to be done.
+		 * - We can force the update (when using the step method on the video for instance).
 		 */
-		public function update() : void
+		public function update(force:Boolean = false) : void
 		{
-
-			if (_player.playing && !_player.paused) {
-
-				bitmapData.lock();
-				bitmapData.draw(_player.container, null, null, null, _clippingRect);
-				bitmapData.unlock();
-				invalidateContent();
+			
+			if (_player.playing && !_player.paused || force) {
+				_currentTime = int(_player.time*10000);
+				if (Math.abs(_currentTime - _lastTime) >= _frameInterval || force) {
+					_lastTime = _currentTime;
+					bitmapData.lock();
+					bitmapData.draw(_player.container, null, null, null, _clippingRect);
+					bitmapData.unlock();
+					invalidateContent();
+				}
 			}
-
+			
 		}
-
+		
 		override public function dispose() : void
 		{
 			super.dispose();

@@ -16,7 +16,7 @@ package away3d.textures
 		private var _autoUpdate : Boolean;
 		private var _materialWidth : uint;
 		private var _materialHeight : uint;
-		private var _player : IVideoPlayer;
+		protected var _player : IVideoPlayer;
 		private var _clippingRect : Rectangle;
 		
 		private var _currentTime:int;

@@ -12,13 +12,18 @@ package away3d.materials.utils
 	import flash.net.NetConnection;
 	import flash.net.NetStream;
 
+	/**
+	 * Plays a video locally or from a streaming server. When connection has been established, a "ready" event is dispatched. 
+	 * @author Louis Dorard (louis@dorard.me)
+	 * 
+	 */
 	public class SimpleVideoPlayer extends EventDispatcher implements IVideoPlayer
 	{
 		
 		private var _src:String;
 		private var _video:Video;
-		private var _ns:NetStream;
-		private var _nc:NetConnection;
+		protected var _ns:NetStream;
+		protected var _nc:NetConnection;
 		private var _nsClient:Object;
 		private var _soundTransform:SoundTransform;
 		private var _loop:Boolean;
@@ -27,8 +32,9 @@ package away3d.materials.utils
 		private var _lastVolume:Number;
 		private var _container:Sprite;
 		
-		public function SimpleVideoPlayer(serverAddress:String = null)
+		public function SimpleVideoPlayer(source:String = null, serverAddress:String = null, nc:NetConnection = null)
 		{
+			_src = source;
 			
 			// default values
 			_soundTransform = new SoundTransform();
@@ -45,16 +51,23 @@ package away3d.materials.utils
 			_nsClient["onBWDone"] = onBWDone;
 			_nsClient["close"] = streamClose;
 			
-			// NetConnection
-			_nc = new NetConnection();
-			_nc.client = _nsClient;
-			_nc.addEventListener(NetStatusEvent.NET_STATUS, 		netStatusHandler, false, 0, true);
-			_nc.addEventListener(SecurityErrorEvent.SECURITY_ERROR, securityErrorHandler, false, 0, true);
-			_nc.addEventListener(IOErrorEvent.IO_ERROR, 			ioErrorHandler, false, 0, true);
-			_nc.addEventListener(AsyncErrorEvent.ASYNC_ERROR, 		asyncErrorHandler, false, 0, true);
-			_nc.connect(serverAddress);
-			
 			_video = new Video();
+			
+			// NetConnection
+			if (nc != null) {
+				_nc = nc;
+				// TODO make sure connection is connected...
+				onNetConnectionSuccess(); // attach netconnection to netstream, netstream to video, and video to container
+			}
+			else {
+				_nc = new NetConnection();
+				_nc.client = _nsClient;
+				_nc.addEventListener(NetStatusEvent.NET_STATUS, 		netStatusHandler, false, 0, true);
+				_nc.addEventListener(SecurityErrorEvent.SECURITY_ERROR, securityErrorHandler, false, 0, true);
+				_nc.addEventListener(IOErrorEvent.IO_ERROR, 			ioErrorHandler, false, 0, true);
+				_nc.addEventListener(AsyncErrorEvent.ASYNC_ERROR, 		asyncErrorHandler, false, 0, true);
+				_nc.connect(serverAddress);
+			}
 		}
 		
 		
@@ -85,10 +98,6 @@ package away3d.materials.utils
 			}
 		}
 		
-		public function step(frames:int):void
-		{
-			_ns.step(frames);
-		}
 		
 		public function pause():void
 		{
@@ -206,28 +215,30 @@ package away3d.materials.utils
 					break;
 				case "NetConnection.Connect.Success":
 					trace("Connected to stream", e);
-					
-					// NetStream
-					_ns = new NetStream(_nc);
-					_ns.checkPolicyFile = true;
-					_ns.client = _nsClient;
-					_ns.addEventListener(NetStatusEvent.NET_STATUS, 	netStatusHandler, false, 0, true);
-					_ns.addEventListener(AsyncErrorEvent.ASYNC_ERROR, 	asyncErrorHandler, false, 0, true);
-					_ns.addEventListener(IOErrorEvent.IO_ERROR, 		ioErrorHandler, false, 0, true);
-					
-					// video
-					_video.attachNetStream( _ns );
-					
-					// container
-					_container = new Sprite();
-					_container.addChild( _video );
-					
+					onNetConnectionSuccess();
 					this.dispatchEvent(new Event("ready", true));
 				
 					break;
 			}
 		}
 		
+		protected function onNetConnectionSuccess():void
+		{
+			// NetStream
+			_ns = new NetStream(_nc);
+			_ns.checkPolicyFile = true;
+			_ns.client = _nsClient;
+			_ns.addEventListener(NetStatusEvent.NET_STATUS, 	netStatusHandler, false, 0, true);
+			_ns.addEventListener(AsyncErrorEvent.ASYNC_ERROR, 	asyncErrorHandler, false, 0, true);
+			_ns.addEventListener(IOErrorEvent.IO_ERROR, 		ioErrorHandler, false, 0, true);
+			
+			// video
+			_video.attachNetStream( _ns );
+			
+			// container
+			_container = new Sprite();
+			_container.addChild( _video );
+		}
 		
 		//////////////////////////////////////////////////////
 		// get / set functions
@@ -317,14 +328,6 @@ package away3d.materials.utils
 		public function set height(val:int):void
 		{
 			_video.height = val;
-		}
-		
-		public function get inBufferSeek():Boolean{
-			return _ns.inBufferSeek;
-		}
-		
-		public function set inBufferSeek(b:Boolean):void{
-			_ns.inBufferSeek = b;
 		}
 		
 		//////////////////////////////////////////////////////

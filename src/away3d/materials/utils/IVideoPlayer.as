@@ -75,20 +75,9 @@ package away3d.materials.utils
 		function get time() : Number;
 		
 		/**
-		 * Specifies whether displayed data is cached for smart seeking (TRUE), or not (FALSE)
-		 */
-		function get inBufferSeek() : Boolean;
-		function set inBufferSeek(b:Boolean) : void;
-		
-		/**
 		 * Start playing (or resume if paused) the video. 
 		 */
 		function play() : void;
-		
-		/**
-		 * Steps forward or back the specified number of frames. 
-		 */
-		function step(frames:int) : void;
 		
 		/**
 		 * Temporarily pause playback. Resume using play(). 

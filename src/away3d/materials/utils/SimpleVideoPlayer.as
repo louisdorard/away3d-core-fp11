@@ -21,7 +21,7 @@ package away3d.materials.utils
 	{
 		
 		private var _src:String;
-		private var _video:Video;
+		protected var _video:Video;
 		protected var _ns:NetStream;
 		protected var _nc:NetConnection;
 		private var _nsClient:Object;
@@ -31,6 +31,7 @@ package away3d.materials.utils
 		private var _paused:Boolean;
 		private var _lastVolume:Number;
 		private var _container:Sprite;
+		private var _ready:Boolean = false;
 		
 		public function SimpleVideoPlayer(source:String = null, serverAddress:String = null, nc:NetConnection = null)
 		{
@@ -216,8 +217,6 @@ package away3d.materials.utils
 				case "NetConnection.Connect.Success":
 					trace("Connected to stream", e);
 					onNetConnectionSuccess();
-					this.dispatchEvent(new Event("ready", true));
-				
 					break;
 			}
 		}
@@ -238,6 +237,9 @@ package away3d.materials.utils
 			// container
 			_container = new Sprite();
 			_container.addChild( _video );
+			
+			this.dispatchEvent(new Event("ready", true));
+			_ready = true;
 		}
 		
 		//////////////////////////////////////////////////////
@@ -352,6 +354,11 @@ package away3d.materials.utils
 		public function get paused():Boolean
 		{
 			return _paused;
+		}
+		
+		public function get ready():Boolean
+		{
+			return _ready;
 		}
 		
 		

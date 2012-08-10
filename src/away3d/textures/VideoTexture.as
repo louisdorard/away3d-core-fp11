@@ -1,6 +1,5 @@
 package away3d.textures
 {
-	import away3d.materials.utils.IVideoPlayer;
 	import away3d.materials.utils.SimpleVideoPlayer;
 	import away3d.tools.utils.TextureUtils;
 	
@@ -16,14 +15,14 @@ package away3d.textures
 		private var _autoUpdate : Boolean;
 		private var _materialWidth : uint;
 		private var _materialHeight : uint;
-		protected var _player : IVideoPlayer;
+		protected var _player : SimpleVideoPlayer;
 		private var _clippingRect : Rectangle;
 		
 		private var _currentTime:int;
 		private var _lastTime:int = -100;
 		private var _frameInterval:int;
 
-		public function VideoTexture(source : String, materialWidth : uint = 256, materialHeight : uint = 256, loop : Boolean = true, autoPlay : Boolean = false, player : IVideoPlayer = null, serverAddress : String = null, fps : int = 15)
+		public function VideoTexture(source : String, materialWidth : uint = 256, materialHeight : uint = 256, loop : Boolean = true, autoPlay : Boolean = false, player : SimpleVideoPlayer = null, serverAddress : String = null, fps : int = 15)
 		{
 			_broadcaster = new Sprite();
 
@@ -50,12 +49,17 @@ package away3d.textures
 			// Sets up the bitmap material
 			super(new BitmapData(_materialWidth, _materialHeight, false, 0x00ffffff));
 
-			// if autoplay start video
+			// if autoplay, start video as soon as it's ready
 			if (autoPlay)
-				_player.play();
+				_player.addEventListener("ready", onPlayerReady);
 
 			// auto update is true by default
 			autoUpdate = true;
+		}
+		
+		private function onPlayerReady(e:Event):void
+		{
+			_player.play();
 		}
 
 		/**
@@ -165,7 +169,7 @@ package away3d.textures
 				_broadcaster.removeEventListener(Event.ENTER_FRAME, autoUpdateHandler);
 		}
 
-		public function get player():IVideoPlayer
+		public function get player():SimpleVideoPlayer
 		{
 			return _player;
 		}

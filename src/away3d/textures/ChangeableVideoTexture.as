@@ -1,18 +1,20 @@
 package away3d.textures
 {
-	import away3d.materials.utils.IVideoPlayer;
+	import away3d.materials.utils.SimpleVideoPlayer;
 	
 	public class ChangeableVideoTexture extends VideoTexture
-	{
-		public function ChangeableVideoTexture(player:IVideoPlayer, materialWidth:Number, materialHeight:Number, autoPlay:Boolean = false)
+	{	
+		public function ChangeableVideoTexture(player:SimpleVideoPlayer, materialWidth:Number, materialHeight:Number)
 		{
-			super(player.source, materialWidth, materialHeight, false, autoPlay, player, null, 15);
+			super(player.source, materialWidth, materialHeight, false, false, player, null, 15);
 		}
 		
-		public function set player(p:IVideoPlayer):void
+		public function set player(p:SimpleVideoPlayer):void
 		{
 			_player = p;
-			update(true);
+			_player.width = materialWidth;
+			_player.height = materialHeight;
+			// update(true);
 			// pause?
 			// TODO check width & height stay the same, loop = false, and src has been defined
 		}

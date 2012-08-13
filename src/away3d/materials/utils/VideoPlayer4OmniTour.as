@@ -1,5 +1,6 @@
 package away3d.materials.utils
 {
+	import flash.events.Event;
 	import flash.net.NetConnection;
 
 	/**
@@ -12,14 +13,17 @@ package away3d.materials.utils
 	 */
 	public class VideoPlayer4OmniTour extends SimpleVideoPlayer
 	{
+		private var fps:int = 15;
 		private var loaded:Boolean = false;
-		public function VideoPlayer4OmniTour(source:String, serverAddress:String = null, nc:NetConnection = null, onVideoStart:Function = null, onVideoEnd:Function = null, onVideoLoaded:Function = null)
+		
+		private var onVideoLoaded:Function;
+		
+		public function VideoPlayer4OmniTour(source:String, serverAddress:String = null, nc:NetConnection = null, onEnterFrame:Function = null, onVideoLoaded:Function = null)
 		{
 			super(source, serverAddress, nc);
+			this.onVideoLoaded = onVideoLoaded;
 			// TODO listen for events on netstream and launch methods specified to constructor
-			if (onVideoStart != null) addEventListener("", onVideoStart);
-			if (onVideoEnd != null) addEventListener("", onVideoEnd);
-			if (onVideoLoaded != null) addEventListener("", onVideoLoaded);
+			_video.addEventListener(Event.ENTER_FRAME, onEnterFrame);
 		}
 		
 		override protected function onNetConnectionSuccess():void
@@ -27,7 +31,6 @@ package away3d.materials.utils
 			super.onNetConnectionSuccess();
 			mute = true;
 			_ns.inBufferSeek = true; // required for smart seeking and using the step() method
-			pause();
 		}
 		
 		
@@ -57,6 +60,15 @@ package away3d.materials.utils
 		 */
 		public function get inBufferSeek():Boolean{
 			return _ns.inBufferSeek;
+		}
+		
+		public function get nc():NetConnection{
+			return _nc;
+		}
+		
+		public function getCurrentFrameNumber():int
+		{
+			return int(time * fps);
 		}
 		
 	}

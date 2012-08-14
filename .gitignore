@@ -1,10 +1,8 @@
 /.flexLibProperties
 /target
 /.project
+/.settings
 /.actionScriptProperties
-
-src/away3d/cameras/.DS_Store
-
-.DS_Store
-
-.gitignore
+*.DS_Store
+*.iml
+out

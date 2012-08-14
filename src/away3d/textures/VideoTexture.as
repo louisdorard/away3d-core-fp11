@@ -47,7 +47,7 @@ package away3d.textures
 			_frameInterval = int(1/fps * 10000);
 
 			// Sets up the bitmap material
-			super(new BitmapData(_materialWidth, _materialHeight, false, 0x00ffffff));
+			super(new BitmapData(_materialWidth, _materialHeight, true, 0));
 
 			// if autoplay, start video as soon as it's ready
 			if (autoPlay)
@@ -70,6 +70,7 @@ package away3d.textures
 		 */
 		public function update(force:Boolean = false) : void
 		{
+<<<<<<< HEAD
 			
 			if (_player.playing && !_player.paused || force) {
 				_currentTime = int(_player.time*10000);
@@ -80,6 +81,16 @@ package away3d.textures
 					bitmapData.unlock();
 					invalidateContent();
 				}
+=======
+
+			if (_player.playing && !_player.paused) {
+
+				bitmapData.lock();
+				bitmapData.fillRect(_clippingRect, 0);
+				bitmapData.draw(_player.container, null, null, null, _clippingRect);
+				bitmapData.unlock();
+				invalidateContent();
+>>>>>>> master
 			}
 			
 		}

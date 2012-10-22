@@ -1,9 +1,10 @@
 package away3d.materials.utils
 {
 	import flash.display.Sprite;
+	import flash.events.IEventDispatcher;
 	import flash.media.SoundTransform;
 
-	public interface IVideoPlayer
+	public interface IVideoPlayer extends IEventDispatcher
 	{
 		
 		/**

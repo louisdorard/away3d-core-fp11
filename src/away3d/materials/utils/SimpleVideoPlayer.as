@@ -17,14 +17,17 @@ package away3d.materials.utils
 	 * @author Louis Dorard (louis@dorard.me)
 	 * 
 	 */
-	public class SimpleVideoPlayer extends EventDispatcher implements IVideoPlayer
+	public class SimpleVideoPlayer implements IVideoPlayer
 	{
 		
 		private var _src:String;
-		protected var _video:Video;
-		protected var _ns:NetStream;
-		protected var _nc:NetConnection;
-		private var _nsClient:Object;
+		private var _video:Video;
+		private var _fps:int;
+		private var _nsm:NetStreamManager;
+		private var _ns:NetStream;
+		private var _nc:NetConnection; // used to create a netstream, if needed
+		private var _netStreamProvided:Boolean = false;
+		private var _netConnectionProvided:Boolean = false;
 		private var _soundTransform:SoundTransform;
 		private var _loop:Boolean;
 		private var _playing:Boolean;
@@ -32,8 +35,9 @@ package away3d.materials.utils
 		private var _lastVolume:Number;
 		private var _container:Sprite;
 		private var _ready:Boolean = false;
+		private var _eventDispatcher:EventDispatcher = new EventDispatcher();
 		
-		public function SimpleVideoPlayer(source:String = null, serverAddress:String = null, nc:NetConnection = null)
+		public function SimpleVideoPlayer(source:String = null, ns:NetStream = null , nsm:NetStreamManager = null)
 		{
 			_src = source;
 			
@@ -45,29 +49,30 @@ package away3d.materials.utils
 			_lastVolume = 1;
 			
 			
-			// client object that'll redirect various calls from the video stream
-			_nsClient = {};
-			_nsClient["onCuePoint"] = metaDataHandler;
-			_nsClient["onMetaData"] = metaDataHandler;
-			_nsClient["onBWDone"] = onBWDone;
-			_nsClient["close"] = streamClose;
-			
 			_video = new Video();
 			
-			// NetConnection
-			if (nc != null) {
-				_nc = nc;
-				// TODO make sure connection is connected...
-				onNetConnectionSuccess(); // attach netconnection to netstream, netstream to video, and video to container
-			}
-			else {
-				_nc = new NetConnection();
-				_nc.client = _nsClient;
-				_nc.addEventListener(NetStatusEvent.NET_STATUS, 		netStatusHandler, false, 0, true);
-				_nc.addEventListener(SecurityErrorEvent.SECURITY_ERROR, securityErrorHandler, false, 0, true);
-				_nc.addEventListener(IOErrorEvent.IO_ERROR, 			ioErrorHandler, false, 0, true);
-				_nc.addEventListener(AsyncErrorEvent.ASYNC_ERROR, 		asyncErrorHandler, false, 0, true);
-				_nc.connect(serverAddress);
+			// NetStream
+			_ns = ns;
+			if (_ns != null)
+			{
+				_netStreamProvided = true;
+				attach();
+			} else {
+				// NetConnection
+				if (nsm != null)
+				{
+					_nsm = nsm;
+					_netConnectionProvided = true;
+				} else {
+					_nsm = new NetStreamManager(null);
+				}
+				_nc = _nsm.nc;
+				if (_nc.connected)
+				{
+					attach();
+				} else {
+					_nc.addEventListener(NetStatusEvent.NET_STATUS, netStatusHandler, false, 0, true);
+				}
 			}
 		}
 		
@@ -126,87 +131,39 @@ package away3d.materials.utils
 		
 		public function dispose():void
 		{
-			
-			_ns.close();
+			if (!_netStreamProvided) _ns.close();
 			
 			_video.attachNetStream( null );
 			
-			_ns.removeEventListener( NetStatusEvent.NET_STATUS, 	netStatusHandler );
-			_ns.removeEventListener( AsyncErrorEvent.ASYNC_ERROR, 	asyncErrorHandler );
-			_ns.removeEventListener( IOErrorEvent.IO_ERROR,			ioErrorHandler );
-			
-			_nc.removeEventListener( NetStatusEvent.NET_STATUS, 		netStatusHandler );
-			_nc.removeEventListener( SecurityErrorEvent.SECURITY_ERROR, securityErrorHandler );
-			_nc.removeEventListener( IOErrorEvent.IO_ERROR, 			ioErrorHandler );
-			_nc.removeEventListener( AsyncErrorEvent.ASYNC_ERROR, 		asyncErrorHandler );
-			
-			_nsClient["onCuePoint"] = null;
-			_nsClient["onMetaData"]	= null;
-			_nsClient["onBWDone"] 	= null;
-			_nsClient["close"]		= null;
+			_nc.removeEventListener( NetStatusEvent.NET_STATUS, netStatusHandler );
 			
 			_container.removeChild( _video );
 			_container = null;
 			
 			_src =  null;
-			_ns = null;
-			_nc = null;
-			_nsClient = null;
+			if (!_netStreamProvided) _ns = null;
+			if (!_netConnectionProvided) _nsm.dispose();
+			
 			_video = null;
 			_soundTransform = null;
-
+			
 			_playing = false;
 			_paused = false;
-			
 		}
-		
-		
 		
 		
 		//////////////////////////////////////////////////////
 		// event handlers
 		//////////////////////////////////////////////////////
 		
-		
-		private function asyncErrorHandler(event:AsyncErrorEvent): void
-		{
-			// Must be present to prevent errors, but won't do anything
-		}
-		
-		private function metaDataHandler(oData:Object = null):void
-		{
-			// Offers info such as oData.duration, oData.width, oData.height, oData.framerate and more (if encoded into the FLV)
-			//this.dispatchEvent( new VideoEvent(VideoEvent.METADATA,_netStream,file,oData) );
-		}
-		
-		private function ioErrorHandler(e:IOErrorEvent):void
-		{
-			trace("An IOerror occured: "+e.text);
-		}
-		
-		private function securityErrorHandler(e:SecurityErrorEvent):void
-		{
-			trace("A security error occured: "+e.text+" Remember that the FLV must be in the same security sandbox as your SWF.");
-		}
-		
-		private function onBWDone():void
-		{
-			// Must be present to prevent errors for RTMP, but won't do anything
-		}
-		private function streamClose():void
-		{
-			trace("The stream was closed. Incorrect URL?");
-		}
-		
-		
 		private function netStatusHandler(e:NetStatusEvent):void
 		{
+			trace(e.info["code"] + " (" + e.info["description"] + " ; " + e.info["details"] + ")");
 			switch (e.info["code"]) {
 				case "NetStream.Play.Stop": 
 					//this.dispatchEvent( new VideoEvent(VideoEvent.STOP,_netStream, file) ); 
 					if(loop)
 						_ns.play(_src);
-					
 					break;
 				case "NetStream.Play.Play":
 					//this.dispatchEvent( new VideoEvent(VideoEvent.PLAY,_netStream, file) );
@@ -216,20 +173,19 @@ package away3d.materials.utils
 					break;
 				case "NetConnection.Connect.Success":
 					trace("Connected to stream", e);
-					onNetConnectionSuccess();
+					attach();
 					break;
 			}
 		}
 		
-		protected function onNetConnectionSuccess():void
+		// attach netconnection to netstream, netstream to video, and video to container
+		private function attach():void
 		{
-			// NetStream
-			_ns = new NetStream(_nc);
-			_ns.checkPolicyFile = true;
-			_ns.client = _nsClient;
-			_ns.addEventListener(NetStatusEvent.NET_STATUS, 	netStatusHandler, false, 0, true);
-			_ns.addEventListener(AsyncErrorEvent.ASYNC_ERROR, 	asyncErrorHandler, false, 0, true);
-			_ns.addEventListener(IOErrorEvent.IO_ERROR, 		ioErrorHandler, false, 0, true);
+			if (_ns == null)
+			{
+				_ns = _nsm.createNetStream();
+			}
+			_ns.addEventListener(NetStatusEvent.NET_STATUS, netStatusHandler, false, 0, true);
 			
 			// video
 			_video.attachNetStream( _ns );
@@ -238,8 +194,9 @@ package away3d.materials.utils
 			_container = new Sprite();
 			_container.addChild( _video );
 			
-			this.dispatchEvent(new Event("ready", true));
+			dispatchEvent(new Event("ready", true));
 			_ready = true;
+			trace("Player ready");
 		}
 		
 		//////////////////////////////////////////////////////
@@ -254,8 +211,11 @@ package away3d.materials.utils
 		
 		public function set source(src:String):void
 		{
-			_src = src;
-			if(_playing) _ns.play(_src);
+			if (_src != src)
+			{
+				_src = src;
+				if(_playing) _ns.play(_src);
+			}
 		}
 		
 		public function get loop():Boolean
@@ -332,6 +292,18 @@ package away3d.materials.utils
 			_video.height = val;
 		}
 		
+		public function get ns():NetStream
+		{
+			return _ns;
+		}
+		
+		public function set ns(value:NetStream):void
+		{
+			_ns = value;
+			_ns.addEventListener(NetStatusEvent.NET_STATUS, netStatusHandler, false, 0, true);
+			_video.attachNetStream( _ns );
+		}
+		
 		//////////////////////////////////////////////////////
 		// read-only vars
 		//////////////////////////////////////////////////////
@@ -361,6 +333,40 @@ package away3d.materials.utils
 			return _ready;
 		}
 		
+		public function get nsm():NetStreamManager
+		{
+			return _nsm;
+		}
 		
+		//////////////////////////////////////////////////////
+		// event dispatcher methods
+		//////////////////////////////////////////////////////
+		
+		public function addEventListener(type:String, listener:Function, useCapture:Boolean=false, priority:int=0, useWeakReference:Boolean=false):void
+		{
+			_eventDispatcher.addEventListener(type, listener, useCapture, priority, useWeakReference);
+		}
+		
+		public function dispatchEvent(event:Event):Boolean
+		{
+			return _eventDispatcher.dispatchEvent(event);
+		}
+		
+		public function hasEventListener(type:String):Boolean
+		{
+			return _eventDispatcher.hasEventListener(type);
+		}
+		
+		public function removeEventListener(type:String, listener:Function, useCapture:Boolean=false):void
+		{
+			_eventDispatcher.removeEventListener(type, listener, useCapture);
+		}
+		
+		public function willTrigger(type:String):Boolean
+		{
+			return _eventDispatcher.willTrigger(type);
+		}
+
+
 	}
 }

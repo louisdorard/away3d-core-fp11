@@ -1,5 +1,6 @@
 package away3d.textures
 {
+	import away3d.materials.utils.IVideoPlayer;
 	import away3d.materials.utils.SimpleVideoPlayer;
 	import away3d.tools.utils.TextureUtils;
 	
@@ -7,6 +8,7 @@ package away3d.textures
 	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.geom.Rectangle;
+	import flash.utils.getTimer;
 
 	public class VideoTexture extends BitmapTexture
 	{
@@ -15,14 +17,20 @@ package away3d.textures
 		private var _autoUpdate : Boolean;
 		private var _materialWidth : uint;
 		private var _materialHeight : uint;
-		protected var _player : SimpleVideoPlayer;
+		private var _player : IVideoPlayer;
 		private var _clippingRect : Rectangle;
 		
-		private var _currentTime:int;
-		private var _lastTime:int = -100;
-		private var _frameInterval:int;
+		// variables used for smart updates
+		private var smartUpdate : Boolean = false;
+		private var _lastFrame : int = 0;
+		
+		// variables used for getting actual fps 
+		private var startTime:Number = getTimer();
+		private var framesNumber:Number = 0;
+		private var _fps:Number;
+		
 
-		public function VideoTexture(source : String, materialWidth : uint = 256, materialHeight : uint = 256, loop : Boolean = true, autoPlay : Boolean = false, player : SimpleVideoPlayer = null, serverAddress : String = null, fps : int = 15)
+		public function VideoTexture(source : String, materialWidth : uint = 256, materialHeight : uint = 256, loop : Boolean = true, autoPlay : Boolean = false, player : IVideoPlayer = null)
 		{
 			_broadcaster = new Sprite();
 
@@ -34,7 +42,7 @@ package away3d.textures
 			_clippingRect = new Rectangle(0, 0, _materialWidth, _materialHeight);
 
 			// assigns the provided player or creates a simple player if null.
-			_player = player || new SimpleVideoPlayer(serverAddress);
+			_player = player || new SimpleVideoPlayer(source);
 			_player.loop = loop;
 			_player.source = source;
 			_player.width = _materialWidth;
@@ -42,9 +50,6 @@ package away3d.textures
 
 			// sets autplay
 			_autoPlay = autoPlay;
-			
-			// computes the time interval between consecutive frames, given the number of frames per second
-			_frameInterval = int(1/fps * 10000);
 
 			// Sets up the bitmap material
 			super(new BitmapData(_materialWidth, _materialHeight, true, 0));
@@ -65,34 +70,41 @@ package away3d.textures
 		/**
 		 * Draws the video and updates the bitmap texture
 		 * - If autoUpdate is false and this function is not called the bitmap texture will not update!
-		 * - If the time measured by the player since the last update is smaller than the interframe time interval, then there is no new frame to be shown and therefore no update to be done.
+		 * - TODO: if the time measured by the player since the last update is smaller than the interframe time interval, then there is no new frame to be shown and therefore no update to be done.
 		 * - We can force the update (when using the step method on the video for instance).
 		 */
 		public function update(force:Boolean = false) : void
 		{
-<<<<<<< HEAD
-			
 			if (_player.playing && !_player.paused || force) {
-				_currentTime = int(_player.time*10000);
-				if (Math.abs(_currentTime - _lastTime) >= _frameInterval || force) {
-					_lastTime = _currentTime;
+				var currentFrame:int = _player.currentFrameNumber;
+				if (!smartUpdate || currentFrame >= _lastFrame || force) {
+					_lastFrame = currentFrame;
 					bitmapData.lock();
-					bitmapData.draw(_player.container, null, null, null, _clippingRect);
+					bitmapData.fillRect(_clippingRect, 0);
+					try {
+						bitmapData.draw(_player.container, null, null, null, _clippingRect);
+					} catch (e:Error) {
+						trace(e);
+					}
 					bitmapData.unlock();
 					invalidateContent();
+					
+					// update fps
+					var currentTime:Number = (getTimer() - startTime) / 1000;  
+					framesNumber++;  
+					if (currentTime > 1)  
+					{  
+						_fps = Math.floor((framesNumber/currentTime)*10.0)/10.0;
+						framesNumber = 0;  
+					} 
 				}
-=======
-
-			if (_player.playing && !_player.paused) {
-
-				bitmapData.lock();
-				bitmapData.fillRect(_clippingRect, 0);
-				bitmapData.draw(_player.container, null, null, null, _clippingRect);
-				bitmapData.unlock();
-				invalidateContent();
->>>>>>> master
 			}
 			
+		}
+		
+		public function get fps():Number
+		{
+			return _fps;
 		}
 		
 		override public function dispose() : void
@@ -180,9 +192,19 @@ package away3d.textures
 				_broadcaster.removeEventListener(Event.ENTER_FRAME, autoUpdateHandler);
 		}
 
-		public function get player():SimpleVideoPlayer
+		public function get player():IVideoPlayer
 		{
 			return _player;
 		}
+
+		public function set player(value:IVideoPlayer):void
+		{
+			_player = value;
+			_player.width = materialWidth;
+			_player.height = materialHeight;
+			update(true);
+			// TODO check width & height stay the same, loop = false, and src has been defined
+		}
+
 	}
 }

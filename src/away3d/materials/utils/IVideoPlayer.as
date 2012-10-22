@@ -56,6 +56,12 @@ package away3d.materials.utils
 		function set height(val : int) : void;
 		
 		/**
+		 * Get/Set access to the number of frames per second
+		 */	
+		function get fps() : int;
+		function set fps(val : int) : void;
+		
+		/**
 		 * Provides access to the Video Object
 		 */	
 		function get container() : Sprite;
@@ -74,6 +80,16 @@ package away3d.materials.utils
 		 * Returns the actual time of the netStream
 		 */
 		function get time() : Number;
+		
+		/**
+		 * Indicates whether player is ready to be used
+		 */
+		function get ready() : Boolean;
+		
+		
+		function get currentFrameNumber():int;
+		
+		function get currentFPS() : Number;
 		
 		/**
 		 * Start playing (or resume if paused) the video. 

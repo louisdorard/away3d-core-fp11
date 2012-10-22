@@ -11,7 +11,7 @@ package away3d.materials.utils
 	import flash.media.Video;
 	import flash.net.NetConnection;
 	import flash.net.NetStream;
-
+	
 	/**
 	 * Plays a video locally or from a streaming server. When connection has been established, a "ready" event is dispatched. 
 	 * @author Louis Dorard (louis@dorard.me)
@@ -48,7 +48,6 @@ package away3d.materials.utils
 			_paused = false;
 			_lastVolume = 1;
 			
-			
 			_video = new Video();
 			
 			// NetStream
@@ -83,7 +82,6 @@ package away3d.materials.utils
 		
 		public function play():void
 		{
-			
 			if(!_src)
 			{
 				trace("Video source not set.");
@@ -103,7 +101,6 @@ package away3d.materials.utils
 				_paused = false;
 			}
 		}
-		
 		
 		public function pause():void
 		{
@@ -127,7 +124,6 @@ package away3d.materials.utils
 			_playing = false;
 			_paused = false;
 		}
-
 		
 		public function dispose():void
 		{
@@ -198,6 +194,7 @@ package away3d.materials.utils
 			_ready = true;
 			trace("Player ready");
 		}
+		
 		
 		//////////////////////////////////////////////////////
 		// get / set functions
@@ -292,6 +289,16 @@ package away3d.materials.utils
 			_video.height = val;
 		}
 		
+		public function get fps():int
+		{
+			return _fps;
+		}
+		
+		public function set fps(val:int):void
+		{
+			_fps = val;
+		}
+		
 		public function get ns():NetStream
 		{
 			return _ns;
@@ -322,7 +329,7 @@ package away3d.materials.utils
 		{
 			return _playing;
 		}
-
+		
 		public function get paused():Boolean
 		{
 			return _paused;
@@ -336,6 +343,16 @@ package away3d.materials.utils
 		public function get nsm():NetStreamManager
 		{
 			return _nsm;
+		}
+		
+		public function get currentFPS():Number
+		{
+			return _ns.currentFPS;
+		}
+		
+		public function get currentFrameNumber():int
+		{
+			return int(time * fps); // note that the time method is not very accurate
 		}
 		
 		//////////////////////////////////////////////////////

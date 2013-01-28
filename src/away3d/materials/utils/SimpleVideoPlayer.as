@@ -202,8 +202,16 @@ package away3d.materials.utils
 			_container = new Sprite();
 			_container.addChild( _video );
 			
-			dispatchEvent(new Event("ready", true));
+			// if playing video locally, then player is ready now
+			if (_nsm != null && _nsm.serverAddress == null)
+				markAsReady();
+		}
+		
+		protected function markAsReady():void // also serves as a "onReady" method
+		{
+			pause();
 			_ready = true;
+			this.dispatchEvent(new Event("ready", true));
 			trace("Player ready");
 		}
 		

@@ -11,6 +11,7 @@ package away3d.materials.utils
 	import flash.media.Video;
 	import flash.net.NetConnection;
 	import flash.net.NetStream;
+	import flash.utils.getTimer;
 	
 	/**
 	 * Plays a video locally or from a streaming server. When connection has been established, a "ready" event is dispatched. 
@@ -35,7 +36,7 @@ package away3d.materials.utils
 		private var _lastVolume:Number;
 		private var _container:Sprite;
 		private var _ready:Boolean = false;
-		private var _eventDispatcher:EventDispatcher = new EventDispatcher();
+		protected var _eventDispatcher:EventDispatcher = new EventDispatcher();
 		
 		public function SimpleVideoPlayer(source:String = null, ns:NetStream = null , nsm:NetStreamManager = null)
 		{
@@ -154,25 +155,6 @@ package away3d.materials.utils
 		// event handlers
 		//////////////////////////////////////////////////////
 		
-		private function netStatusHandler(e:NetStatusEvent):void
-		{
-			trace(e.info["code"] + " (" + e.info["description"] + " ; " + e.info["details"] + ")");
-			switch (e.info["code"]) {
-				case "NetStream.Play.Stop": 
-					//this.dispatchEvent( new VideoEvent(VideoEvent.STOP,_netStream, file) ); 
-					if(loop)
-						_ns.play(_src);
-					break;
-				case "NetStream.Play.Play":
-					//this.dispatchEvent( new VideoEvent(VideoEvent.PLAY,_netStream, file) );
-					break;
-				case "NetStream.Play.StreamNotFound":
-					trace("The file "+ _src +" was not found", e);
-					break;
-				case "NetConnection.Connect.Success":
-					trace("Connected to stream", e);
-					attach();
-					break;
 		// Handles error messages.  
 		private function securityErrorHandler(event:SecurityErrorEvent):void {
 			// TODO: log these events
@@ -182,6 +164,39 @@ package away3d.materials.utils
 			// TODO: log these events
 		}
 		
+		protected function netStatusHandler(e:NetStatusEvent):void
+		{
+			// log event
+			var traceMsg:String = "[" + getTimer()/1000 + "s - NetStatusEvent] ";
+			if (e.currentTarget==_ns) traceMsg += "[" + _src + "] ";
+			traceMsg += e.info["code"] + " (" + e.info["description"] + ")";
+			trace(traceMsg);
+			
+			// take action according to event
+			if (e.currentTarget==_ns)
+			{
+				traceMsg = _src + " player:";
+				switch (e.info["code"]) {
+					case "NetStream.Play.Stop": 
+						//this.dispatchEvent( new VideoEvent(VideoEvent.STOP,_netStream, file) ); 
+						if(loop)
+							_ns.play(_src);
+						break;
+					case "NetStream.Play.Play":
+						//this.dispatchEvent( new VideoEvent(VideoEvent.PLAY,_netStream, file) );
+						break;
+					case "NetStream.Play.StreamNotFound":
+						trace("   -> The file "+ _src +" was not found", e);
+						break;
+					case "NetConnection.Connect.Success":
+						trace("   -> Connected to stream", e);
+						attach();
+						break;
+					case "NetStream.Buffer.Full":
+						if (!_ready)
+							markAsReady();
+						break;
+				}	
 			}
 		}
 		

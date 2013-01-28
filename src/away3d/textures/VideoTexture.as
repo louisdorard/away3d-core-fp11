@@ -70,21 +70,24 @@ package away3d.textures
 		/**
 		 * Draws the video and updates the bitmap texture
 		 * - If autoUpdate is false and this function is not called the bitmap texture will not update!
+		 * - If smartUpdate is true and the frame number hasn't changed since the last call to update(), the bitmap texture will not update!
 		 * - TODO: if the time measured by the player since the last update is smaller than the interframe time interval, then there is no new frame to be shown and therefore no update to be done.
 		 * - We can force the update (when using the step method on the video for instance).
 		 */
 		public function update(force:Boolean = false) : void
 		{
-			if (_player.playing && !_player.paused || force) {
-				var currentFrame:int = _player.currentFrameNumber;
-				if (!smartUpdate || currentFrame >= _lastFrame || force) {
-					_lastFrame = currentFrame;
+			if (_player.playing || force) {
+				if (!smartUpdate || _player.currentPosition != _lastFrame || force) {
+					_lastFrame = _player.currentPosition;
 					bitmapData.lock();
 					bitmapData.fillRect(_clippingRect, 0);
-					try {
-						bitmapData.draw(_player.container, null, null, null, _clippingRect);
-					} catch (e:Error) {
-						trace(e);
+					if (_player.container != null)
+					{
+						try {
+							bitmapData.draw(_player.container, null, null, null, _clippingRect);
+						} catch (e:Error) {
+							trace(e);
+						}
 					}
 					bitmapData.unlock();
 					invalidateContent();
@@ -98,6 +101,8 @@ package away3d.textures
 						framesNumber = 0;  
 					} 
 				}
+			} else {
+				trace("VideoTexture : can't update texture because video player is not playing...");
 			}
 			
 		}

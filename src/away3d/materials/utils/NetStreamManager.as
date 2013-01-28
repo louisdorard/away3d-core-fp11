@@ -40,12 +40,21 @@ package away3d.materials.utils
 				_nc.addEventListener(NetStatusEvent.NET_STATUS, netStatusHandler);
 		}
 		
-		private function netStatusHandler(e:NetStatusEvent):void
+		private function netStatusHandler(event:NetStatusEvent):void
 		{
-			switch (e.info["code"]) {
+			trace(event.info.code);
+			switch (event.info.code) {
 				case "NetConnection.Connect.Success":
 					trace("NetConnection established");
 					dispatchEvent(new Event("connected"));
+					break;
+				case "NetConnection.Connect.Closed":
+					trace("NetConnection closed");
+					// TODO: reconnect
+					break;
+				case "NetConnection.Connect.Failed":
+					trace("Failed to connect");
+					// TODO: reconnect 
 					break;
 			}
 		}
@@ -54,8 +63,8 @@ package away3d.materials.utils
 		public function createNetStream():NetStream
 		{
 			var ns:NetStream = new NetStream(_nc);
-			ns.addEventListener(AsyncErrorEvent.ASYNC_ERROR, 	asyncErrorHandler, false, 0, true);
-			ns.addEventListener(IOErrorEvent.IO_ERROR, 		ioErrorHandler, false, 0, true);
+			ns.addEventListener(AsyncErrorEvent.ASYNC_ERROR, asyncErrorHandler, false, 0, true);
+			ns.addEventListener(IOErrorEvent.IO_ERROR, ioErrorHandler, false, 0, true);
 			ns.checkPolicyFile = true;
 			ns.client = _nsClient;
 			return ns;
@@ -64,9 +73,11 @@ package away3d.materials.utils
 		public function dispose():void
 		{
 			_nc.removeEventListener( SecurityErrorEvent.SECURITY_ERROR, securityErrorHandler );
-			_nc.removeEventListener( IOErrorEvent.IO_ERROR, 			ioErrorHandler );
-			_nc.removeEventListener( AsyncErrorEvent.ASYNC_ERROR, 		asyncErrorHandler );
+			_nc.removeEventListener( IOErrorEvent.IO_ERROR, ioErrorHandler );
+			_nc.removeEventListener( AsyncErrorEvent.ASYNC_ERROR, asyncErrorHandler );
 			_nc = null;
+			
+			// TODO: dispose all netstreams that have been opened (set them to null)
 			
 			_nsClient["onCuePoint"] = null;
 			_nsClient["onMetaData"]	= null;
@@ -79,6 +90,7 @@ package away3d.materials.utils
 		private function onBWDone():void
 		{
 			// Must be present to prevent errors for RTMP, but won't do anything
+			trace("BWDone");
 		}
 		
 		private function streamClose():void
@@ -90,11 +102,13 @@ package away3d.materials.utils
 		{
 			// Offers info such as oData.duration, oData.width, oData.height, oData.framerate and more (if encoded into the FLV)
 			//this.dispatchEvent( new VideoEvent(VideoEvent.METADATA,_netStream,file,oData) );
+			trace("Metadata: " + oData.toString());
 		}
 		
 		private function asyncErrorHandler(event:AsyncErrorEvent): void
 		{
 			// Must be present to prevent errors, but won't do anything
+			trace("An async error occured: " + event.text);
 		}
 		
 		private function ioErrorHandler(e:IOErrorEvent):void
@@ -111,6 +125,12 @@ package away3d.materials.utils
 		{
 			return _nc;
 		}
+
+		public function get serverAddress():String
+		{
+			return _serverAddress;
+		}
+
 
 	}
 }

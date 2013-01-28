@@ -71,6 +71,7 @@ package away3d.materials.utils
 					attach();
 				} else {
 					_nc.addEventListener(NetStatusEvent.NET_STATUS, netStatusHandler, false, 0, true);
+					_nc.addEventListener(SecurityErrorEvent.SECURITY_ERROR, securityErrorHandler);
 				}
 			}
 		}
@@ -132,6 +133,7 @@ package away3d.materials.utils
 			_video.attachNetStream( null );
 			
 			_nc.removeEventListener( NetStatusEvent.NET_STATUS, netStatusHandler );
+			_nc.removeEventListener( SecurityErrorEvent.SECURITY_ERROR, securityErrorHandler );
 			
 			_container.removeChild( _video );
 			_container = null;
@@ -171,6 +173,15 @@ package away3d.materials.utils
 					trace("Connected to stream", e);
 					attach();
 					break;
+		// Handles error messages.  
+		private function securityErrorHandler(event:SecurityErrorEvent):void {
+			// TODO: log these events
+		}
+		
+		private function asyncErrorHandler(event:AsyncErrorEvent):void {
+			// TODO: log these events
+		}
+		
 			}
 		}
 		
@@ -182,6 +193,7 @@ package away3d.materials.utils
 				_ns = _nsm.createNetStream();
 			}
 			_ns.addEventListener(NetStatusEvent.NET_STATUS, netStatusHandler, false, 0, true);
+			_ns.addEventListener(AsyncErrorEvent.ASYNC_ERROR, asyncErrorHandler);
 			
 			// video
 			_video.attachNetStream( _ns );
@@ -308,6 +320,7 @@ package away3d.materials.utils
 		{
 			_ns = value;
 			_ns.addEventListener(NetStatusEvent.NET_STATUS, netStatusHandler, false, 0, true);
+			_ns.addEventListener(AsyncErrorEvent.ASYNC_ERROR, asyncErrorHandler);
 			_video.attachNetStream( _ns );
 		}
 		

@@ -350,7 +350,7 @@ package away3d.materials.utils
 			return _ns.currentFPS;
 		}
 		
-		public function get currentFrameNumber():int
+		public function get currentPosition():int
 		{
 			return int(time * fps); // note that the time method is not very accurate
 		}

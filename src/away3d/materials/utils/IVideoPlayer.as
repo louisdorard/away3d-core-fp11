@@ -87,7 +87,7 @@ package away3d.materials.utils
 		function get ready() : Boolean;
 		
 		
-		function get currentFrameNumber():int;
+		function get currentPosition():int;
 		
 		function get currentFPS() : Number;
 		

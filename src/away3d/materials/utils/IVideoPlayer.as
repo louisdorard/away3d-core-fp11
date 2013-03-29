@@ -116,6 +116,9 @@ package away3d.materials.utils
 		 */		
 		function dispose() : void;
 		
-		
+		/**
+		 * Reset net stream used in player.
+		 */
+		function resetStream() : void;
 	}
 }

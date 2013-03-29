@@ -35,7 +35,7 @@ package away3d.materials.utils
 		private var _paused:Boolean;
 		private var _lastVolume:Number;
 		private var _container:Sprite;
-		private var _ready:Boolean = false;
+		protected var _ready:Boolean = false;
 		protected var _eventDispatcher:EventDispatcher = new EventDispatcher();
 		
 		public function SimpleVideoPlayer(source:String = null, ns:NetStream = null , nsm:NetStreamManager = null)
@@ -52,6 +52,7 @@ package away3d.materials.utils
 			_video = new Video();
 			
 			// NetStream
+			_nsm = nsm;
 			_ns = ns;
 			if (_ns != null)
 			{
@@ -59,9 +60,8 @@ package away3d.materials.utils
 				attach();
 			} else {
 				// NetConnection
-				if (nsm != null)
+				if (_nsm != null)
 				{
-					_nsm = nsm;
 					_netConnectionProvided = true;
 				} else {
 					_nsm = new NetStreamManager(null);
@@ -148,6 +148,20 @@ package away3d.materials.utils
 			
 			_playing = false;
 			_paused = false;
+		}
+		
+		public function resetStream():void
+		{
+			if (!_netStreamProvided)
+			{
+				_ns.close();
+				_ns = null;
+				_video.attachNetStream(null);
+				_ns = _nsm.createNetStream();
+				_ns.addEventListener(NetStatusEvent.NET_STATUS, netStatusHandler, false, 0, true);
+				_ns.addEventListener(AsyncErrorEvent.ASYNC_ERROR, asyncErrorHandler);
+				_video.attachNetStream(_ns);
+			}
 		}
 		
 		
@@ -337,14 +351,6 @@ package away3d.materials.utils
 		public function get ns():NetStream
 		{
 			return _ns;
-		}
-		
-		public function set ns(value:NetStream):void
-		{
-			_ns = value;
-			_ns.addEventListener(NetStatusEvent.NET_STATUS, netStatusHandler, false, 0, true);
-			_ns.addEventListener(AsyncErrorEvent.ASYNC_ERROR, asyncErrorHandler);
-			_video.attachNetStream( _ns );
 		}
 		
 		//////////////////////////////////////////////////////

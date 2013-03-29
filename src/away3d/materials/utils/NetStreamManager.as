@@ -90,7 +90,7 @@ package away3d.materials.utils
 		private function onBWDone():void
 		{
 			// Must be present to prevent errors for RTMP, but won't do anything
-			trace("BWDone");
+			// trace("BWDone");
 		}
 		
 		private function streamClose():void
@@ -102,7 +102,7 @@ package away3d.materials.utils
 		{
 			// Offers info such as oData.duration, oData.width, oData.height, oData.framerate and more (if encoded into the FLV)
 			//this.dispatchEvent( new VideoEvent(VideoEvent.METADATA,_netStream,file,oData) );
-			trace("Metadata: " + oData.toString());
+			// trace("Metadata: " + oData.toString());
 		}
 		
 		private function asyncErrorHandler(event:AsyncErrorEvent): void

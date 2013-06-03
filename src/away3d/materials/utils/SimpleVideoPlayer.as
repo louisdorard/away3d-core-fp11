@@ -154,16 +154,14 @@ package away3d.materials.utils
 		
 		public function resetStream():void
 		{
-			if (!_netStreamProvided)
-			{
-				_ns.close();
-				_ns = null;
-				_video.attachNetStream(null);
-				_ns = _nsm.createNetStream();
-				_ns.addEventListener(NetStatusEvent.NET_STATUS, netStatusHandler, false, 0, true);
-				_ns.addEventListener(AsyncErrorEvent.ASYNC_ERROR, asyncErrorHandler);
-				_video.attachNetStream(_ns);
-			}
+			_ready = false;
+			_ns.close();
+			_ns = null;
+			_video.attachNetStream(null);
+			_ns = _nsm.createNetStream();
+			_ns.addEventListener(NetStatusEvent.NET_STATUS, netStatusHandler, false, 0, true);
+			_ns.addEventListener(AsyncErrorEvent.ASYNC_ERROR, asyncErrorHandler);
+			_video.attachNetStream(_ns);
 		}
 		
 		

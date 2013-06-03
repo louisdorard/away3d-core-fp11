@@ -38,6 +38,8 @@ package away3d.materials.utils
 		protected var _ready:Boolean = false;
 		protected var _eventDispatcher:EventDispatcher = new EventDispatcher();
 		
+		public var verbose:Boolean = false;
+		
 		public function SimpleVideoPlayer(source:String = null, ns:NetStream = null , nsm:NetStreamManager = null)
 		{
 			_src = source;
@@ -181,10 +183,14 @@ package away3d.materials.utils
 		protected function netStatusHandler(e:NetStatusEvent):void
 		{
 			// log event
-			var traceMsg:String = "[" + getTimer()/1000 + "s - NetStatusEvent] ";
-			if (e.currentTarget==_ns) traceMsg += "[" + _src + "] ";
-			traceMsg += e.info["code"] + " (" + e.info["description"] + ")";
-			trace(traceMsg);
+			if (verbose)
+			{
+				var traceMsg:String = "[" + getTimer()/1000 + "s - NetStatusEvent] ";
+				if (e.currentTarget==_ns)
+					traceMsg += "[" + _src + "] ";
+				traceMsg += e.info["code"] + " (" + e.info["description"] + ")";
+				trace(traceMsg);
+			}
 			
 			// take action according to event
 			if (e.currentTarget==_ns)
@@ -203,7 +209,6 @@ package away3d.materials.utils
 						trace("   -> The file "+ _src +" was not found", e);
 						break;
 					case "NetConnection.Connect.Success":
-						trace("   -> Connected to stream", e);
 						attach();
 						break;
 					case "NetStream.Buffer.Full":
